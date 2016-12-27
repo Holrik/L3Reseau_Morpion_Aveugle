@@ -5,7 +5,7 @@ from client import *
 import socket
 import select
 
-socket_serv
+socket_serv = socket.socket()
 list_socks = []
 
 def init_server():
@@ -15,13 +15,13 @@ def init_server():
 	socket_serv.bind(('', 7777))
 	
 	socket_serv.listen(1)
-	list_clients.append(socket_serv)
+	list_socks.append(socket_serv)
 
 
 def new_client():
 	new_sock, address = socket_serv.accept()
 	list_socks.append(new_sock)
-	client.newplayer(new_sock)
+	newplayer(new_sock) # TODO client
 
 def send_message(player, message):
 	user = client.getsock(player)
@@ -30,21 +30,30 @@ def send_message(player, message):
 def main():
 	grids = [grid(), grid(), grid()]
 	list_players = [J1, J2]
+	players_connected = 0
 	current_player = J1
 	while 1:
 		shot = -1
-		client.display_grid(current_player)
+		list_active_socks, a, b = select.select(list_socks, [], [])
+		while players_connected < 2:
+			for active_sock in list_active_socks:
+				if active_sock == socket_serv:
+					new_client()
+					players_connected += 1
+		
+		display_grid(current_player) # TODO client
 		message = "A votre tour !\nQuelle case allez-vous jouer ?"
 		send_message(current_player, message)
+		
 		while shot <0 or shot >=NB_CELLS:
 			list_active_socks, a, b = select.select(list_socks, [], [])
 			for active_sock in list_active_socks:
-				# If the server is doing something
+				# If someone tries to get connected
 				if active_sock == socket_serv:
 					new_client()
-					
+				
 				# If the current player is doing something
-				elif active_sock == client.getsock(current_player):
+				elif active_sock == getsock(current_player): # TODO client
 					# We should only receive 1 char
 					message = active_sock.recv(10)
 					shot = int(message)
@@ -65,8 +74,8 @@ def main():
 			break #To adjust later if we want to play multiple times
 	send_message(J1, "game over")
 	send_message(J2, "game over")
-	client.display_grid(J1)
-	client.display_grid(J2)
+	display_grid(J1) # TODO client
+	display_grid(J2) # TODO client
 	if grids[0].gameOver() == J1:
 		send_message(J1, "You win !")
 		send_message(J2, "You lose !")
