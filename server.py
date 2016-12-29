@@ -1,13 +1,13 @@
 #!/usr/bin/python3
 
 from grid import *
-from client import *
 import socket
 import select
 
 socket_serv = socket.socket(family=socket.AF_INET6,type=socket.SOCK_STREAM,
 	proto=0, fileno=None)
 list_socks = []
+players = []
 
 def init_server():
 	socket_serv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -16,6 +16,21 @@ def init_server():
 	socket_serv.listen(1)
 	list_socks.append(socket_serv)
 
+def newplayer(sock):
+	for i in range(len(players)):
+		if players[i] == -1:
+			players[i] = sock
+			break
+	players.append(sock)
+
+def delplayer(sock):
+	for i in range(len(players)):
+		if players[i] == sock:
+			players[i] = -1
+			break
+
+def getsock(player_num):
+	return players[player_num-1]
 
 def new_client():
 	new_sock, address = socket_serv.accept()
@@ -28,25 +43,18 @@ def send_message(player, message):
 
 def main():
 	grids = [grid(), grid(), grid()]
-	list_players = [J1, J2]
-	players_connected = 0
 	current_player = J1
 	
 	list_active_socks, a, b = select.select(list_socks, [], [])
-	while players_connected < 2:
+	while len(players) < 2: # Need at least 2 players
 		for active_sock in list_active_socks:
 			if active_sock == socket_serv:
 				new_client()
-				players_connected += 1
 	
 	while 1:
+		send_message(current_player, "1") # His turn
 		shot = -1
-		
-		display_grid(current_player, grids[current_player]) # Client
-		message = "A votre tour !\nQuelle case allez-vous jouer ?"
-		send_message(current_player, message)
-		
-		while shot <0 or shot >=NB_CELLS:
+		while 1:
 			list_active_socks, a, b = select.select(list_socks, [], [])
 			for active_sock in list_active_socks:
 				# If someone tries to get connected
@@ -84,6 +92,7 @@ def main():
 				grids[current_player].cells[shot] = current_player
 				grids[0].play(current_player, shot)
 				current_player = current_player%2+1
+			send_message(current_player, grids[current_player].cells[shot])
 		else:
 			break #To adjust later if we want to play multiple times
 	send_message(J1, "game over")

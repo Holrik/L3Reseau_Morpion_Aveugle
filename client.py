@@ -3,30 +3,34 @@
 from grid import *
 from client import *
 import socket
+import sys
 
-players = []
+my_grid = grid()
+my_socket = socket.socket(family=socket.AF_INET6,type=socket.SOCK_STREAM,
+	proto=0, fileno=None)
 
-def newplayer(sock):
-	for i in range(len(players)):
-		if players[i] == -1:
-			players[i] = sock
-			break
-	players.append(sock)
+def init_client():
+	my_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+	my_socket.connect(('', 7777))
 
-def delplayer(sock):
-	for i in range(len(players)):
-		if players[i] == sock:
-			players[i] = -1
-			break
+def main():
+	while 1:
+		play = 0
+		message = sock.recv(5) # Should be 2 characters long
+		# If it's a single digit
+		if len(message) == 2 and message[0] >= 48 and message[0] <= 57:
+			play = int(message)
+		if play == 1:
+			shot = -1
+			my_grid.display()
+            while shot <0 or shot >=NB_CELLS:
+                shot = int(input ("A votre tour !\nQuelle case allez-vous jouer ? "))
+			my_socket.send(shot)
+			message = ""
+			# Wait until we receive an answer 'O' or 'X' about the shot
+			while len(message) == 2 and message[0] != 79 and message[0] != 88:
+				message = sock.recv(5) # Should be 2 characters long
+			my_grid.cells[shot] = message[0]
 
-def display_grid(player_num, grid):
-	message = "-------------" + "\n"
-	for i in range(3):
-		message += "| " + symbols[grid.cells[i*3]]
-		message += " | " + symbols[grid.cells[i*3+1]]
-		message += " | " + symbols[grid.cells[i*3+2]] + " |" + "\n"
-		message += "-------------" + "\n"
-	players[player_num-1].send(message.encode())
-
-def getsock(player_num):
-	return players[player_num-1]
+init_client()
+main()
