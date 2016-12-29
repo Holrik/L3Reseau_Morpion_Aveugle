@@ -21,7 +21,7 @@ def init_server():
 def new_client():
 	new_sock, address = socket_serv.accept()
 	list_socks.append(new_sock)
-	newplayer(new_sock) # TODO client
+	newplayer(new_sock) # Client
 
 def send_message(player, message):
 	user = client.getsock(player)
@@ -41,7 +41,7 @@ def main():
 					new_client()
 					players_connected += 1
 		
-		display_grid(current_player) # TODO client
+		display_grid(current_player) # Client
 		message = "A votre tour !\nQuelle case allez-vous jouer ?"
 		send_message(current_player, message)
 		
@@ -53,14 +53,26 @@ def main():
 					new_client()
 				
 				# If the current player is doing something
-				elif active_sock == getsock(current_player): # TODO client
-					# We should only receive 1 char
+				elif active_sock == getsock(current_player): # Client
+					# We should only receive 1 char, not more
 					message = active_sock.recv(10)
+					# Or none if the player left
+					if len(message) == 0:
+						active_sock.close()
+						list_clients.remove(active_sock)
+						delplayer(active_sock) # Client
+						continue
 					shot = int(message)
 					
 				# If another person is doing something
 				else: # Don't care about it
 					active_sock.recv(1000)
+					#Except if the client is leaving
+					if len(message) == 0:
+						active_sock.close()
+						list_clients.remove(active_sock)
+						delplayer(active_sock) # Client
+						continue
 		
 		if grids[0].gameOver() == -1:
 			# A shot has finally been made
@@ -74,8 +86,8 @@ def main():
 			break #To adjust later if we want to play multiple times
 	send_message(J1, "game over")
 	send_message(J2, "game over")
-	display_grid(J1) # TODO client
-	display_grid(J2) # TODO client
+	display_grid(J1) # Client
+	display_grid(J2) # Client
 	if grids[0].gameOver() == J1:
 		send_message(J1, "You win !")
 		send_message(J2, "You lose !")
