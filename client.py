@@ -16,21 +16,32 @@ def init_client():
 def main():
 	while 1:
 		play = 0
-		message = sock.recv(5) # Should be 2 characters long
-		# If it's a single digit
-		if len(message) == 2 and message[0] >= 48 and message[0] <= 57:
-			play = int(message)
+		message = my_socket.recv(1) # Should be 1 character long
+		# If it's a single 
+		if len(message) == 1:
+			if message[0] >= 48 and message[0] <= 57:
+				play = int(message)
+			else:
+				message += my_socket.recv(19)
+				print(message)
 		if play == 1:
 			shot = -1
 			my_grid.display()
-            while shot <0 or shot >=NB_CELLS:
-                shot = int(input ("A votre tour !\nQuelle case allez-vous jouer ? "))
-			my_socket.send(shot)
+			while shot <0 or shot >=NB_CELLS:
+				shot = int(input ("A votre tour !\nQuelle case allez-vous jouer ? "))
+			my_socket.send(str(shot).encode())
 			message = ""
 			# Wait until we receive an answer 'O' or 'X' about the shot
-			while len(message) == 2 and message[0] != 79 and message[0] != 88:
-				message = sock.recv(5) # Should be 2 characters long
-			my_grid.cells[shot] = message[0]
+			while len(message) != 1:
+				message = my_socket.recv(1) # Should be 1 characters long
+			if (message[0] >= 48 and message[0] <= 57):
+				my_grid.cells[shot] = int(message)
+			else: # game over
+				message += my_socket.recv(8)
+				print(message.decode('utf-8'))
+				my_grid.display()
+				message = my_socket.recv(10)
+				print(message)
 
 init_client()
 main()
