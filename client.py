@@ -22,9 +22,9 @@ def delplayer(sock):
 def display_grid(player_num):
 	message = "-------------"
 	for i in range(3):
-		message += "|" + symbols[self.cells[i*3]] + "\n"
-		message += "|" + symbols[self.cells[i*3+1]] + "\n"
-		message += "|" + symbols[self.cells[i*3+2]] + "|" + "\n"
+		message += "|" + symbols[grids[player_num].cells[i*3]] + "\n"
+		message += "|" + symbols[grids[player_num].cells[i*3+1]] + "\n"
+		message += "|" + symbols[grids[player_num].cells[i*3+2]] + "|" + "\n"
 		message += "-------------" + "\n"
 	players[player_num].send(message)
 
