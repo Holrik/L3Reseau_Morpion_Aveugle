@@ -19,14 +19,14 @@ def delplayer(sock):
 			players[i] = -1
 			break
 
-def display_grid(player_num):
-	message = "-------------"
+def display_grid(player_num, grid):
+	message = "-------------" + "\n"
 	for i in range(3):
-		message += "|" + symbols[grids[player_num].cells[i*3]] + "\n"
-		message += "|" + symbols[grids[player_num].cells[i*3+1]] + "\n"
-		message += "|" + symbols[grids[player_num].cells[i*3+2]] + "|" + "\n"
+		message += "| " + symbols[grid.cells[i*3]]
+		message += " | " + symbols[grid.cells[i*3+1]]
+		message += " | " + symbols[grid.cells[i*3+2]] + " |" + "\n"
 		message += "-------------" + "\n"
-	players[player_num].send(message)
+	players[player_num-1].send(message.encode())
 
 def getsock(player_num):
-	return players[player_num]
+	return players[player_num-1]

@@ -5,12 +5,11 @@ from client import *
 import socket
 import select
 
-socket_serv = socket.socket()
+socket_serv = socket.socket(family=socket.AF_INET6,type=socket.SOCK_STREAM,
+	proto=0, fileno=None)
 list_socks = []
 
 def init_server():
-	socket_serv = socket.socket(family=socket.AF_INET6,type=socket.SOCK_STREAM,
-		proto=0, fileno=None)
 	socket_serv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 	socket_serv.bind(('', 7777))
 	
@@ -24,24 +23,26 @@ def new_client():
 	newplayer(new_sock) # Client
 
 def send_message(player, message):
-	user = client.getsock(player)
-	user.send(message)
+	user = getsock(player) # Client
+	user.send((message+"\n").encode())
 
 def main():
 	grids = [grid(), grid(), grid()]
 	list_players = [J1, J2]
 	players_connected = 0
 	current_player = J1
+	
+	list_active_socks, a, b = select.select(list_socks, [], [])
+	while players_connected < 2:
+		for active_sock in list_active_socks:
+			if active_sock == socket_serv:
+				new_client()
+				players_connected += 1
+	
 	while 1:
 		shot = -1
-		list_active_socks, a, b = select.select(list_socks, [], [])
-		while players_connected < 2:
-			for active_sock in list_active_socks:
-				if active_sock == socket_serv:
-					new_client()
-					players_connected += 1
 		
-		display_grid(current_player) # Client
+		display_grid(current_player, grids[current_player]) # Client
 		message = "A votre tour !\nQuelle case allez-vous jouer ?"
 		send_message(current_player, message)
 		
@@ -59,10 +60,11 @@ def main():
 					# Or none if the player left
 					if len(message) == 0:
 						active_sock.close()
-						list_clients.remove(active_sock)
+						list_socks.remove(active_sock)
 						delplayer(active_sock) # Client
 						continue
-					shot = int(message)
+					if len(message) == 2 and message[0] >= 48 and message[0] <= 57: # If it's a single digit
+						shot = int(message)
 					
 				# If another person is doing something
 				else: # Don't care about it
@@ -70,7 +72,7 @@ def main():
 					#Except if the client is leaving
 					if len(message) == 0:
 						active_sock.close()
-						list_clients.remove(active_sock)
+						list_socks.remove(active_sock)
 						delplayer(active_sock) # Client
 						continue
 		
@@ -86,8 +88,8 @@ def main():
 			break #To adjust later if we want to play multiple times
 	send_message(J1, "game over")
 	send_message(J2, "game over")
-	display_grid(J1) # Client
-	display_grid(J2) # Client
+	display_grid(J1, grids[J1]) # Client
+	display_grid(J2, grids[J2]) # Client
 	if grids[0].gameOver() == J1:
 		send_message(J1, "You win !")
 		send_message(J2, "You lose !")
