@@ -11,19 +11,39 @@ my_socket = socket.socket(family=socket.AF_INET6,type=socket.SOCK_STREAM,
 
 def init_client():
 	my_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-	my_socket.connect(('', 7777))
+	if len(sys.argv) != 2:
+		print("Usage : ./client.py adresse_IP")
+		exit()
+	my_socket.connect((sys.argv[1], 7777))
+
+def game_over(message):
+	while len(message) < 9: #"Game Over"
+		message += my_socket.recv(1)
+	print(message.decode('utf-8'))
+
+	message = my_socket.recv(1)
+	while len(message) < 9: # The moves of the game
+		message += my_socket.recv(1)
+	moves = message.decode('utf-8')
+	for i in range(9):
+		player = int(moves[i])
+		my_grid.cells[i] = player
+	my_grid.display()
+	message = my_socket.recv(15)
+	print(message.decode('utf-8'))
 
 def main():
-	while 1:
+	game_is_over = False
+	while game_is_over == False:
 		play = 0
 		message = my_socket.recv(1) # Should be 1 character long
-		# If it's a single 
+		# If a character was received (if not, len() = 0)
 		if len(message) == 1:
 			if message[0] >= 48 and message[0] <= 57:
 				play = int(message)
-			else:
-				message += my_socket.recv(19)
-				print(message)
+			elif message[0] == 71: # "Game Over"
+				game_over(message)
+				game_is_over = True
 		if play == 1:
 			shot = -1
 			my_grid.display()
@@ -36,12 +56,9 @@ def main():
 				message = my_socket.recv(1) # Should be 1 characters long
 			if (message[0] >= 48 and message[0] <= 57):
 				my_grid.cells[shot] = int(message)
-			else: # game over
-				message += my_socket.recv(8)
-				print(message.decode('utf-8'))
-				my_grid.display()
-				message = my_socket.recv(10)
-				print(message)
+			elif message[0] == 71: # "Game Over"
+				game_over(message)
+				game_is_over = True
 
 init_client()
 main()

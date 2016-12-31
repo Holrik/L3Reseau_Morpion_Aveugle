@@ -86,7 +86,7 @@ def main():
 					continue
 		
 		if grids[0].gameOver() == -1:
-			# A shot has finally been made
+			# A shot has finally been made, treat it
 			if (grids[0].cells[shot] != EMPTY):
 				grids[current_player].cells[shot] = grids[0].cells[shot]
 				send_message(current_player, str(grids[current_player].cells[shot]))
@@ -96,11 +96,20 @@ def main():
 				grids[0].play(current_player, shot)
 				send_message(current_player, str(grids[current_player].cells[shot]))
 				current_player = current_player%2+1
-		else:
+		# Verify if it's still not a gameOver
+		if grids[0].gameOver() != -1:
 			break #To adjust later if we want to play multiple times
-	send_message(J1, "game over")
-	send_message(J2, "game over")
+	send_message(J1, "Game Over")
+	send_message(J2, "Game Over")
+
 	grids[0].display()
+	# Print the full grids
+	moves = ""
+	for i in range (9):
+			moves += str(grids[0].cells[i])
+	send_message(J1, moves)
+	send_message(J2, moves)
+
 	if grids[0].gameOver() == J1:
 		send_message(J1, "You win !")
 		send_message(J2, "You lose !")
