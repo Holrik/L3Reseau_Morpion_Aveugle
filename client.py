@@ -4,6 +4,7 @@ from grid import *
 from client import *
 import socket
 import sys
+import time
 
 my_grid = grid()
 my_socket = socket.socket(family=socket.AF_INET6,type=socket.SOCK_STREAM,
@@ -45,10 +46,15 @@ def main():
 				game_over(message)
 				game_is_over = True
 		if play == 1:
+			print("A votre tour !")
 			shot = -1
 			my_grid.display()
 			while shot <0 or shot >=NB_CELLS:
-				shot = int(input ("A votre tour !\nQuelle case allez-vous jouer ? "))
+				try:
+					shot = int(input ("Quelle case allez-vous jouer ? "))
+				except ValueError:
+					print("Mauvaise valeur ! Entrez un nombre de 0 à 8 !")
+					time.sleep(.2)
 			my_socket.send(str(shot).encode())
 			message = ""
 			# Wait until we receive an answer 'O' or 'X' about the shot
