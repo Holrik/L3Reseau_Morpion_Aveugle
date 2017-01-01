@@ -2,6 +2,8 @@
 
 from grid import *
 from client import *
+from socket import error as SocketError
+import errno
 import socket
 import sys
 import time
@@ -15,7 +17,11 @@ def init_client():
 	if len(sys.argv) != 2:
 		print("Usage : ./client.py adresse_IP")
 		exit()
-	my_socket.connect((sys.argv[1], 7777))
+	try:
+		my_socket.connect((sys.argv[1], 7777))
+	except socket.error:
+		print("N'a pas pu se connecter. Programme avorté.")
+		exit()
 
 def game_over(message):
 	while len(message) < 9: #"Game Over"
@@ -37,7 +43,14 @@ def main():
 	game_is_over = False
 	while game_is_over == False:
 		play = 0
-		message = my_socket.recv(1) # Should be 1 character long
+		
+		try:
+			message = my_socket.recv(1) # Should be 1 character long
+		except SocketError as e:
+			if e.errno == errno.ECONNRESET:
+				exit()
+			raise
+
 		# If a character was received (if not, len() = 0)
 		if len(message) == 1:
 			if message[0] >= 48 and message[0] <= 57:
