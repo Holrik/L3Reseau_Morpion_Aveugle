@@ -4,11 +4,13 @@ from grid import *
 import socket
 import select
 
+# Define the socket, the list of clients and the list of players
 socket_serv = socket.socket(family=socket.AF_INET6,type=socket.SOCK_STREAM,
 	proto=0, fileno=None)
 list_socks = []
 players = []
 
+# Define the connection the clients will have to connect to
 def init_server():
 	socket_serv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 	socket_serv.bind(('', 7777))
@@ -16,6 +18,8 @@ def init_server():
 	socket_serv.listen(1)
 	list_socks.append(socket_serv)
 
+# Add a player to the players list.
+# If a player got disconnected earlier, take its Player_Number
 def newplayer(sock):
 	for i in range(len(players)):
 		if players[i] == -1:
@@ -23,20 +27,26 @@ def newplayer(sock):
 			break
 	players.append(sock)
 
+# Delete a player from the players list.
+# Don't remove it from the list
 def delplayer(sock):
 	for i in range(len(players)):
 		if players[i] == sock:
 			players[i] = -1
 			break
 
+# When we want to get the socket of a particular
+# player (like current_player for example)
 def getsock(player_num):
 	return players[player_num-1]
 
+# Get a connexion from a client
 def new_client():
 	new_sock, address = socket_serv.accept()
 	list_socks.append(new_sock)
 	newplayer(new_sock)
 
+# Send informations or a message to a player
 def send_message(player, message):
 	user = getsock(player)
 	user.send((message).encode())
@@ -65,15 +75,15 @@ def main():
 			elif active_sock == getsock(current_player):
 				# We should only receive 1 char, not more
 				message = active_sock.recv(10)
+				if len(message) == 1 and message[0] >= 48 and message[0] <= 57: # If it's a single digit
+					shot = int(message)
+					break
 				# Or none if the player left
 				if len(message) == 0:
 					active_sock.close()
 					list_socks.remove(active_sock)
 					delplayer(active_sock)
 					continue
-				if len(message) == 1 and message[0] >= 48 and message[0] <= 57: # If it's a single digit
-					shot = int(message)
-					break
 				
 			# If another person is doing something
 			else: # Don't care about it
@@ -90,7 +100,6 @@ def main():
 			if (grids[0].cells[shot] != EMPTY):
 				grids[current_player].cells[shot] = grids[0].cells[shot]
 				send_message(current_player, str(grids[current_player].cells[shot]))
-#				print(str(grids[current_player].cells[shot]))
 			else:
 				grids[current_player].cells[shot] = current_player
 				grids[0].play(current_player, shot)
@@ -107,6 +116,7 @@ def main():
 	moves = ""
 	for i in range (9):
 			moves += str(grids[0].cells[i])
+	# Send them the full grids so they can print it entirely
 	send_message(J1, moves)
 	send_message(J2, moves)
 
