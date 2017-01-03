@@ -25,12 +25,7 @@ def init_client():
 		print("N'a pas pu se connecter. Programme avorté.")
 		exit()
 
-# Receive the necessary informations to print when the game is over
-def game_over(message):
-	while len(message) < 9: #"Game Over"
-		message += my_socket.recv(1)
-	print(message.decode('utf-8'))
-	
+def receive_grid():
 	message = my_socket.recv(1)
 	while len(message) < 9: # The moves of the game
 		message += my_socket.recv(1)
@@ -38,6 +33,14 @@ def game_over(message):
 	for i in range(9):
 		player = int(moves[i])
 		my_grid.cells[i] = player
+
+# Receive the necessary informations to print when the game is over
+def game_over(message):
+	while len(message) < 9: #"Game Over"
+		message += my_socket.recv(1)
+	print(message.decode('utf-8'))
+    
+	receive_grid()
 	my_grid.display()
 	
 	message = my_socket.recv(15) # You win/lose
@@ -60,12 +63,18 @@ def main():
 			raise 
 
 		# If a character was received (if not, len() = 0)
+		if len(message) == 0:
+			print("Le serveur a rencontre un probleme, deconnection...")
+			exit()
 		if len(message) == 1:
 			if message[0] >= 48 and message[0] <= 57:
 				play = int(message)
 			elif message[0] == 71: # "G" for "Game Over"
 				game_over(message)
 				game_is_over = True
+			else:
+				message += my_socket.recv(99)
+				print(message.decode())
 		
 		# If we received the signal for us to make a move
 		if play == 1:
@@ -86,9 +95,10 @@ def main():
 			my_socket.send(str(shot).encode())
 			
 			# Wait until we receive an answer 'O' or 'X' about the shot
-			message = ""
-			while len(message) != 1:
-				message = my_socket.recv(1) # Should be 1 character long
+			message = my_socket.recv(1) # Should be 1 character long
+			if len(message) == 0:
+				print("Le serveur a rencontre un probleme, deconnection...")
+				exit()
 			
 			# Check if the answer was a digit (1 = 'O', 2 = 'X')
 			if (message[0] >= 48 and message[0] <= 57):
@@ -96,6 +106,12 @@ def main():
 			elif message[0] == 71: # "G" for "Game Over"
 				game_over(message)
 				game_is_over = True
+			else:
+				message += my_socket.recv(99)
+				print(message.decode())
 
+		# If we received the signal for us to receive the grid
+		if play == 3:
+			receive_grid()
 init_client()
 main()

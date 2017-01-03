@@ -45,11 +45,22 @@ def new_client():
 	new_sock, address = socket_serv.accept()
 	list_socks.append(new_sock)
 	newplayer(new_sock)
+	print("New Client !")
 
 # Send informations or a message to a player
 def send_message(player, message):
 	user = getsock(player)
-	user.send((message).encode())
+	if user != -1:
+		user.send((message).encode())
+		return True
+	return False # returns True if was able to deliver the message
+
+def send_grid(grid, player):
+	moves = ""
+	for i in range (9):
+			moves += str(grid.cells[i])
+	# Send them the full grids so they can print it entirely
+	send_message(player, moves)
 
 def main():
 	grids = [grid(), grid(), grid()]
@@ -62,7 +73,16 @@ def main():
 				new_client()
 	
 	while 1:
-		send_message(current_player, "1") # His turn
+		s = send_message(current_player, "1") # His turn
+		while s != True: # Until the message gets send(the player is connected)
+			list_active_socks, a, b = select.select(list_socks, [], [])
+			for active_sock in list_active_socks:
+				# If someone tries to get connected
+				if active_sock == socket_serv:
+					new_client()
+			send_message(current_player, "3")
+			send_grid(grids[current_player], current_player)
+			s = send_message(current_player, "1")
 		shot = -1
 		
 		list_active_socks, a, b = select.select(list_socks, [], [])
@@ -94,8 +114,13 @@ def main():
 					list_socks.remove(active_sock)
 					delplayer(active_sock) # Client
 					continue
-		
-		if grids[0].gameOver() == -1:
+
+		if shot < 0 or shot >= NB_CELLS:
+			send_message(current_player%2+1, "Le joueur " + str(current_player) +
+				" a rencontre un probleme, veuillez patienter...")
+			continue
+			
+		if grids[0].gameOver() == -1 and shot >= 0 and shot < NB_CELLS:
 			# A shot has finally been made, treat it
 			if (grids[0].cells[shot] != EMPTY):
 				grids[current_player].cells[shot] = grids[0].cells[shot]
@@ -113,12 +138,8 @@ def main():
 
 	grids[0].display()
 	# Print the full grids
-	moves = ""
-	for i in range (9):
-			moves += str(grids[0].cells[i])
-	# Send them the full grids so they can print it entirely
-	send_message(J1, moves)
-	send_message(J2, moves)
+	send_grid(grids[0], J1)
+	send_grid(grids[0], J2)
 
 	if grids[0].gameOver() == J1:
 		send_message(J1, "You win !")
