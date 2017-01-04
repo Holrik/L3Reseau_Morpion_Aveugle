@@ -5,15 +5,15 @@ import socket
 import select
 
 # Define the socket, the list of clients and the list of players
-socket_serv = socket.socket(family=socket.AF_INET6,type=socket.SOCK_STREAM,
-	proto=0, fileno=None)
-list_socks = []
-players = []
+#socket_serv = socket.socket(family=socket.AF_INET6,type=socket.SOCK_STREAM,
+#	proto=0, fileno=None)
+#list_socks = []
+#players = []
 
 # Define the connection the clients will have to connect to
 def init_server():
 	socket_serv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-	socket_serv.bind(('', 7777))
+	socket_serv.bind(("", 7777))
 	
 	socket_serv.listen(1)
 	list_socks.append(socket_serv)
@@ -175,5 +175,11 @@ def main():
 		for i in range(3, len(players)+1):
 			send_message(i, "Everyone loses !")
 
-init_server()
-main()
+#init_server()
+while 1:
+	socket_serv = socket.socket(family=socket.AF_INET6,type=socket.SOCK_STREAM,
+		proto=0, fileno=None)
+	list_socks = []
+	players = []
+	init_server()
+	main()

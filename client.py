@@ -9,12 +9,17 @@ import sys
 import time
 
 # Define the user's grid and the socket
-my_grid = grid()
-my_socket = socket.socket(family=socket.AF_INET6,type=socket.SOCK_STREAM,
-	proto=0, fileno=None)
+#my_grid = grid()
+#my_socket = socket.socket(family=socket.AF_INET6,type=socket.SOCK_STREAM,
+#	proto=0, fileno=None)
 
 # Gets a connection with the server if possible. If not possible, exit
 def init_client():
+	global my_socket
+	global my_grid
+	my_grid = grid()
+	my_socket = socket.socket(family=socket.AF_INET6,type=socket.SOCK_STREAM,
+		proto=0, fileno=None)
 	my_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 	if len(sys.argv) != 2:
 		print("Usage : ./client.py adresse_IP")
@@ -36,6 +41,7 @@ def receive_grid():
 
 # Receive the necessary informations to print when the game is over
 def game_over(message, observateur):
+	continuer = ""
 	while len(message) < 9: #"Game Over"
 		message += my_socket.recv(1)
 	print(message.decode('utf-8'))
@@ -46,7 +52,23 @@ def game_over(message, observateur):
 	
 	message = my_socket.recv(25) # Winner/Loser
 	print(message.decode('utf-8'))
-	exit()
+	my_socket.close()
+	while continuer != "y":
+		try:
+			continuer = input ("Voulez vous rejouer une partie ? y/n :")
+		except ( EOFError):
+		# If the value is anything but an int
+			print("Mauvaise valeur ! Entrez y ou n !")
+			time.sleep(.2)
+		if continuer != "n" and continuer != "y":
+			print("Mauvaise valeur ! Entrez y ou n !")
+			time.sleep(.2)
+		else:
+			if continuer == "n":
+				exit()
+			init_client()
+			main()
+		
 
 # Play the game
 def main():
@@ -122,5 +144,6 @@ def main():
 			print("Le joueur " + message.decode() + " vient de jouer :")
 			receive_grid()
 			my_grid.display()
+
 init_client()
 main()
