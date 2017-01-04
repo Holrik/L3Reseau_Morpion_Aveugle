@@ -74,7 +74,16 @@ def main():
 	
 	while 1:
 		s = send_message(current_player, "1") # His turn
+		bug = False
 		while s != True: # Until the message gets send(the player is connected)
+			if bug == False:
+				message = ("Le joueur " + str(current_player) +
+					" a rencontre un probleme, veuillez patienter...")
+				send_message(current_player%2+1, message)
+				for i in range(3, len(players)+1):
+					send_message(i, message)
+				bug = True
+			
 			list_active_socks, a, b = select.select(list_socks, [], [])
 			for active_sock in list_active_socks:
 				# If someone tries to get connected
@@ -85,39 +94,42 @@ def main():
 			s = send_message(current_player, "1")
 		shot = -1
 		
-		list_active_socks, a, b = select.select(list_socks, [], [])
-		for active_sock in list_active_socks:
-			# If someone tries to get connected
-			if active_sock == socket_serv:
-				new_client()
+		#list_active_socks, a, b = select.select(list_socks, [], [])
+		
+		current_player_activation = False
+		while current_player_activation != True:
+			list_active_socks, a, b = select.select(list_socks, [], [])
+			for active_sock in list_active_socks:
+				# If someone tries to get connected
+				if active_sock == socket_serv:
+					new_client()
 			
-			# If the current player is doing something
-			elif active_sock == getsock(current_player):
-				# We should only receive 1 char, not more
-				message = active_sock.recv(10)
-				if len(message) == 1 and message[0] >= 48 and message[0] <= 57: # If it's a single digit
-					shot = int(message)
-					break
-				# Or none if the player left
-				if len(message) == 0:
-					active_sock.close()
-					list_socks.remove(active_sock)
-					delplayer(active_sock)
-					continue
+				# If the current player is doing something
+				elif active_sock == getsock(current_player):
+					current_player_activation = True
+					# We should only receive 1 char, not more
+					message = active_sock.recv(10)
+					if len(message) == 1 and message[0] >= 48 and message[0] <= 57: # If it's a single digit
+						shot = int(message)
+						break
+					# Or none if the player left
+					if len(message) == 0:
+						active_sock.close()
+						list_socks.remove(active_sock)
+						delplayer(active_sock)
+						continue
 				
-			# If another person is doing something
-			else: # Don't care about it
-				message = active_sock.recv(1000)
-				#Except if the client is leaving
-				if len(message) == 0:
-					active_sock.close()
-					list_socks.remove(active_sock)
-					delplayer(active_sock) # Client
-					continue
+				# If another person is doing something
+				else: # Don't care about it
+					message = active_sock.recv(1000)
+					#Except if the client is leaving
+					if len(message) == 0:
+						active_sock.close()
+						list_socks.remove(active_sock)
+						delplayer(active_sock) # Client
+						continue
 
-		if shot < 0 or shot >= NB_CELLS:
-			send_message(current_player%2+1, "Le joueur " + str(current_player) +
-				" a rencontre un probleme, veuillez patienter...")
+		if shot < 0 or shot >= NB_CELLS: # If current_player got disconnected
 			continue
 			
 		if grids[0].gameOver() == -1 and shot >= 0 and shot < NB_CELLS:
@@ -129,12 +141,18 @@ def main():
 				grids[current_player].cells[shot] = current_player
 				grids[0].play(current_player, shot)
 				send_message(current_player, str(grids[current_player].cells[shot]))
+				for i in range(3, len(players)+1):
+					send_message(i, "4")
+					send_message(i, str(current_player))
+					send_grid(grids[0], i)
 				current_player = current_player%2+1
 		# Verify if it's still not a gameOver
 		if grids[0].gameOver() != -1:
 			break #To adjust later if we want to play multiple times
 	send_message(J1, "Game Over")
 	send_message(J2, "Game Over")
+	for i in range(3, len(players)+1):
+		send_message(i, "Game Over")
 
 	grids[0].display()
 	# Print the full grids
@@ -144,12 +162,18 @@ def main():
 	if grids[0].gameOver() == J1:
 		send_message(J1, "You win !")
 		send_message(J2, "You lose !")
+		for i in range(3, len(players)+1):
+			send_message(i, "J1 wins !")
 	elif grids[0].gameOver() == J2:
 		send_message(J1, "You lose !")
 		send_message(J2, "You win !")
+		for i in range(3, len(players)+1):
+			send_message(i, "J2 wins !")
 	else:
-		send_message(J1, "You lose !")
-		send_message(J2, "You lose !")
+		send_message(J1, "You both lose !")
+		send_message(J2, "You both lose !")
+		for i in range(3, len(players)+1):
+			send_message(i, "Everyone loses !")
 
 init_server()
 main()

@@ -35,22 +35,24 @@ def receive_grid():
 		my_grid.cells[i] = player
 
 # Receive the necessary informations to print when the game is over
-def game_over(message):
+def game_over(message, observateur):
 	while len(message) < 9: #"Game Over"
 		message += my_socket.recv(1)
 	print(message.decode('utf-8'))
     
-	receive_grid()
-	my_grid.display()
+	if observateur == 0:
+		receive_grid()
+		my_grid.display()
 	
-	message = my_socket.recv(15) # You win/lose
+	message = my_socket.recv(25) # Winner/Loser
 	print(message.decode('utf-8'))
+	exit()
 
 # Play the game
 def main():
-	game_is_over = False
-	while game_is_over == False:
-		play = 0
+	observateur = 0
+	while 1:
+		action = 0
 		
 		message = ""
 		try:
@@ -68,16 +70,15 @@ def main():
 			exit()
 		if len(message) == 1:
 			if message[0] >= 48 and message[0] <= 57:
-				play = int(message)
+			    action = int(message)
 			elif message[0] == 71: # "G" for "Game Over"
-				game_over(message)
-				game_is_over = True
+			    action = 2
 			else:
 				message += my_socket.recv(99)
 				print(message.decode())
 		
 		# If we received the signal for us to make a move
-		if play == 1:
+		if action == 1:
 			print("A votre tour !")
 			shot = -1
 			my_grid.display()
@@ -104,14 +105,22 @@ def main():
 			if (message[0] >= 48 and message[0] <= 57):
 				my_grid.cells[shot] = int(message)
 			elif message[0] == 71: # "G" for "Game Over"
-				game_over(message)
-				game_is_over = True
+			    action = 2
 			else:
 				message += my_socket.recv(99)
 				print(message.decode())
 
+		if action == 2: # Game Over
+			game_over(message, observateur)
+
 		# If we received the signal for us to receive the grid
-		if play == 3:
+		if action == 3: # After reconnexion
 			receive_grid()
+		if action == 4: # As an observator
+			observateur = 1
+			message = my_socket.recv(1) # The ID of the player who just played
+			print("Le joueur " + message.decode() + " vient de jouer :")
+			receive_grid()
+			my_grid.display()
 init_client()
 main()
