@@ -7,7 +7,6 @@ from socket import error as SocketError
 import errno
 import socket
 import sys
-import time
 
 # Gets a connection with the server if possible. If not possible, exit
 def init_client(point):
@@ -16,7 +15,7 @@ def init_client(point):
 		try:
 			continuer = input ("Voulez vous jouer en ligne? y/n :")
 		except ( EOFError):
-		# If the value is anything but an int
+		# If the value is an End Of File (error)
 			print("Mauvaise valeur ! Entrez y ou n !")
 			time.sleep(.2)
 		if continuer != "n" and continuer != "y":
@@ -26,7 +25,7 @@ def init_client(point):
 			if continuer == "n":
 				print("Joueur contre l'IA")
 				main()
-				init_client()
+				init_client(point)
 
 	print("Joueur contre Joueur")
 	global my_socket
@@ -92,7 +91,7 @@ def game_over(message, observateur,point):
 		
 
 # Play the game
-def client(point):
+def main_client(point):
 	observateur = 0
 	while 1:
 		action = 0
@@ -168,4 +167,4 @@ def client(point):
 
 point = 0
 init_client(point)
-client(point)
+main_client(point)

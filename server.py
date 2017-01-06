@@ -4,7 +4,6 @@ from grid import *
 import socket
 import select
 
-score = [0,0]
 # Define the connection the clients will have to connect to
 def init_server():
 	socket_serv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -62,7 +61,7 @@ def send_grid(grid, player):
 	# Send them the full grids so they can print it entirely
 	send_message(player, moves)
 
-def main():
+def main_server():
 	grids = [grid(), grid(), grid()]
 	current_player = J1
 	
@@ -93,8 +92,6 @@ def main():
 			send_grid(grids[current_player], current_player)
 			s = send_message(current_player, "1")
 		shot = -1
-		
-		#list_active_socks, a, b = select.select(list_socks, [], [])
 		
 		current_player_activation = False
 		while current_player_activation != True:
@@ -149,6 +146,7 @@ def main():
 		# Verify if it's still not a gameOver
 		if grids[0].gameOver() != -1:
 			break 
+	# When we finally have a Game Over
 	send_message(J1, "Game Over")
 	if grids[0].gameOver() == J1:
 	 	send_message(J1, str(score[0]+1))
@@ -166,22 +164,24 @@ def main():
 	send_grid(grids[0], J2)
 	if grids[0].gameOver() == J1:
 		score[0] = score[0]+1
-		send_message(J1, "You win !  You : " +  str(score[0]) + " | Him :" +  str(score[1]))
-		send_message(J2, "You lose !  You : " +  str(score[1]) + " | Him :" +  str(score[0]))
+		send_message(J1, "You win !  You : " +  str(score[0]) + " | Him : " +  str(score[1]))
+		send_message(J2, "You lose !  You : " +  str(score[1]) + " | Him : " +  str(score[0]))
 		for i in range(3, len(players)+1):
-			send_message(i, "J1 wins !  J1 : " +  str(score[0]) + " | J2 :" +  str(score[1]))
+			send_message(i, "J1 wins !  J1 : " +  str(score[0]) + " | J2 : " +  str(score[1]))
 	elif grids[0].gameOver() == J2:
 		score[1] = score[1]+1
-		send_message(J1, "You lose !  You : " +  str(score[0]) + " | Him :" +  str(score[1]))
-		send_message(J2, "You win !  You : " +  str(score[1]) + " | Him :" +  str(score[0]))
+		send_message(J1, "You lose !  You : " +  str(score[0]) + " | Him : " +  str(score[1]))
+		send_message(J2, "You win !  You : " +  str(score[1]) + " | Him : " +  str(score[0]))
 		for i in range(3, len(players)+1):
-			send_message(i, "J2 wins !  J1 : " +  str(score[0]) + " | J2 :" +  str(score[1]))
+			send_message(i, "J2 wins !  J1 : " +  str(score[0]) + " | J2 : " +  str(score[1]))
 	else:
-		send_message(J1, "You both lose !  You : " +  str(score[0]) + " | Him :" +  str(score[1]))
-		send_message(J2, "You both lose !  You : " +  str(score[1]) + " | Him :" + str(score[0]))
+		send_message(J1, "You both lose !  You : " +  str(score[0]) + " | Him : " +  str(score[1]))
+		send_message(J2, "You both lose !  You : " +  str(score[1]) + " | Him : " + str(score[0]))
 		for i in range(3, len(players)+1):
-			send_message(i, "Everyone loses !  J1 : " + str(score[0]) + " | J2 :" + str(score[1]))
+			send_message(i, "Everyone loses !  J1 : " + str(score[0]) + " | J2 : " + str(score[1]))
 
+# The score of both players
+score = [0,0]
 # Necessary so we can play multiple games
 while 1:
     # Define the socket, the list of clients and the list of players
@@ -190,4 +190,4 @@ while 1:
 	list_socks = []
 	players = []
 	init_server()
-	main()
+	main_server()
