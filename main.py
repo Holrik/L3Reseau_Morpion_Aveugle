@@ -31,4 +31,4 @@ def main():
     else:
         print("you loose !")
 
-main()
+#main()
